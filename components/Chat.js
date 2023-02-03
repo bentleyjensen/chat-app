@@ -2,71 +2,97 @@ import React, { Component } from 'react';
 import { View, Platform, KeyboardAvoidingView } from 'react-native';
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
 
+const firebase = require('firebase');
+import 'firebase/firestore';
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+    apiKey: "AIzaSyBCE6Olsln9bzvH78KUnbWurWqQDatZBGM",
+    authDomain: "chat-app-2a62d.firebaseapp.com",
+    projectId: "chat-app-2a62d",
+    storageBucket: "chat-app-2a62d.appspot.com",
+    messagingSenderId: "402036391919",
+    appId: "1:402036391919:web:3b0ec1ce950290f35dc01a",
+    measurementId: "G-6RRENK1QYC"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
 export default class Chat extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            uid: 0,
             messages: [],
         }
+
+        this.referenceChatMessages = firebase.firestore().collection("messages");
+    }
+
+    authStateUpdated (user) {
+        if (!user) {
+            firebase.auth().signInAnonymously();
+        }
+        this.setState({
+            uid: user.uid,
+            messages: [],
+        });
+
+        this.chatUnsubscribe = this.referenceChatMessages
+            .orderBy("createdAt", "desc")
+            .onSnapshot(this.onCollectionUpdate.bind(this));
     }
 
     componentDidMount (props) {
+        // Set up firebase for user tracking and message watching
+        this.referenceChatMessages = firebase.firestore().collection("messages");
+        this.authUnsubscribe = firebase.auth().onAuthStateChanged(this.authStateUpdated.bind(this));
+
         let { name } = this.props.route.params;
         name = name || 'Anon'; // Backup, if the user doesn't enter a name
 
         this.props.navigation.setOptions({ title: `${name}'s Chat` });
-
-        // Temporary static messages
-        this.setState({
-            messages: [
-                {
-                    _id: 1,
-                    text: `${name} has entered the chat room`,
-                    createdAt: new Date(),
-                    system: true,
-                },
-                {
-                    _id: 2,
-                    text: 'Hello developer',
-                    createdAt: new Date("2023-01-18T03:10:24.023Z"),
-                    user: {
-                        _id: 2,
-                        name: 'React Native',
-                        avatar: 'https://placeimg.com/140/140/any',
-                    },
-                },
-                {
-                    _id: 3,
-                    text: 'I am an older message from user 2',
-                    createdAt: new Date("2023-01-18T03:05:24.023Z"),
-                    user: {
-                        _id: 2,
-                        name: 'React Native',
-                        avatar: 'https://placeimg.com/140/140/any',
-                    },
-                },
-                {
-                    _id: 4,
-                    text: 'I am an older message from user 1',
-                    createdAt: new Date("2023-01-18T03:04:24.023Z"),
-                    user: {
-                        _id: 1,
-                        name: 'React Native',
-                        avatar: 'https://placeimg.com/140/140/any',
-                    },
-                },
-            ]
-        });
-
     }
 
-    // Update state when a message is sent
+    componentWillUnmount () {
+        // Stop listening to messages and auth
+        this.authUnsubscribe();
+        this.chatUnsubscribe();
+    }
+
+    onCollectionUpdate (snapshot) {
+        const messages = [];
+
+        // Trim the snapshot to only the needed data
+        snapshot.forEach((document) => {
+            const data = document.data();
+            messages.push({
+                _id: data._id,
+                text: data.text,
+                createdAt: data.createdAt.toDate(),
+                user: data.user,
+            });
+        });
+
+        // Update state with the trimmed list
+        this.setState({
+            messages: messages,
+        })
+    }
+
+    // When sending, update state and firebase
     onSend(messages = []) {
         this.setState(previousState => {
             return {
                 messages: GiftedChat.append(previousState.messages, messages),
             };
         });
+
+        // Send to firebase
+        this.referenceChatMessages.add(messages[0]);
     }
 
     // Custom bubbles
@@ -95,7 +121,7 @@ export default class Chat extends Component {
                 messages={this.state.messages}
                 onSend={messages => this.onSend(messages)}
                 user={{
-                    _id: 1,
+                    _id: this.state.uid,
                 }}
             />
             {/* fixes an issue in older android versions where the keyboard covers the input */}
