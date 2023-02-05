@@ -32,20 +32,6 @@ export default class Chat extends Component {
         this.referenceChatMessages = firebase.firestore().collection("messages");
     }
 
-    authStateUpdated (user) {
-        if (!user) {
-            firebase.auth().signInAnonymously();
-        }
-        this.setState({
-            uid: user.uid,
-            messages: [],
-        });
-
-        this.chatUnsubscribe = this.referenceChatMessages
-            .orderBy("createdAt", "desc")
-            .onSnapshot(this.onCollectionUpdate.bind(this));
-    }
-
     componentDidMount (props) {
         // Set up firebase for user tracking and message watching
         this.referenceChatMessages = firebase.firestore().collection("messages");
@@ -61,6 +47,20 @@ export default class Chat extends Component {
         // Stop listening to messages and auth
         this.authUnsubscribe();
         this.chatUnsubscribe();
+    }
+
+    authStateUpdated(user) {
+        if (!user) {
+            firebase.auth().signInAnonymously();
+        }
+        this.setState({
+            uid: user.uid,
+            messages: [],
+        });
+
+        this.chatUnsubscribe = this.referenceChatMessages
+            .orderBy("createdAt", "desc")
+            .onSnapshot(this.onCollectionUpdate.bind(this));
     }
 
     onCollectionUpdate (snapshot) {
