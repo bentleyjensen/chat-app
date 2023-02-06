@@ -4,6 +4,7 @@ import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from '@react-native-community/netinfo';
 
+// import CustomActions from './CustomActions-mine';
 import CustomActions from './CustomActions';
 
 const firebase = require('firebase');
@@ -198,7 +199,6 @@ export default class Chat extends Component {
 
     // Disable input when not connected
     renderInputToolbar(props) {
-        console.log("render input toolbar: ", Object.keys(this));
         if (this.state.isConnected)
             return <InputToolbar {...props} />
         else
