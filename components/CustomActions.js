@@ -38,7 +38,7 @@ export default class CustomActions extends Component {
     render() {
         return <TouchableOpacity
             style={[ styles.container ]}
-            onPress={ this.onActionPress.bind(this) }
+            onPress={ this.onActionPress }
         >
             <View style={[ styles.wrapper, this.props.wrapperStyle ]} >
                 <Text style={[ styles.iconText, this.props.iconTextStyle ]}>
