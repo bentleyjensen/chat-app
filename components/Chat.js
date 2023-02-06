@@ -4,6 +4,8 @@ import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from '@react-native-community/netinfo';
 
+import CustomActions from './CustomActions';
+
 const firebase = require('firebase');
 import 'firebase/firestore';
 
@@ -203,6 +205,10 @@ export default class Chat extends Component {
             return <></>
     }
 
+    renderCustomActions(props) {
+        return <CustomActions {...props} />
+    }
+
     render() {
         return <View
             style={{flex: 1}}
@@ -210,6 +216,7 @@ export default class Chat extends Component {
             <GiftedChat
                 renderBubble={this.renderBubble.bind(this)}
                 renderInputToolbar={this.renderInputToolbar.bind(this)}
+                renderActions={this.renderCustomActions}
                 messages={this.state.messages}
                 onSend={messages => this.onSend(messages)}
                 user={{
